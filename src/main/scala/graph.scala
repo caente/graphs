@@ -82,23 +82,23 @@ package object graph {
   }
   object DirectedGraph {
 
-    def apply[A: Eq](elements: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+    def apply[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
       def loop(els: List[A], acc: Graph[A]): Xor[Graph.Cycle[A], Graph[A]] = els match {
         case Nil => Xor.right(acc)
         case x :: xs =>
-          val updated = acc.updated(x, elements.filter(s => x =!= s && relation(x, s)))
+          val updated = acc.updated(x, nodes.filter(s => x =!= s && relation(x, s)))
           val cycle = Graph.hasCycle(updated)
           if (cycle.nonEmpty) Xor.left[Graph.Cycle[A], Graph[A]](Graph.Cycle(cycle))
           else loop(xs, updated)
       }
-      loop(elements, HashMap.empty).map(DirectedGraph(_))
+      loop(nodes, HashMap.empty).map(DirectedGraph(_))
     }
 
   }
 
-  val ls = (1 to 100).toList
-  val relation: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0 || a2 == 1
-  val g = DirectedGraph(ls)(relation)
+  val ls = (1 to 10).toList
+  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
+  val g = DirectedGraph(ls)(smallerAndEven)
   val gr = g.getOrElse(throw new Exception())
   def time[A](f: => A): A = {
     val start = DateTime.now
