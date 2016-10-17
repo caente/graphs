@@ -87,6 +87,12 @@ res6: common.graph.DirectedGraph[Int] =
 4 -> 2
 ```
 
+Now we can know the topological order for the graph that starts with `10`
+```scala
+scala> gr.fromNode(_ === 10).nodesSorted
+res0: List[Int] = List(10, 8, 6, 4, 2)
+```
+
 ##### `map[B](f: A => B):DirectedGraph[B]`
 Transforms every node of the `DirectedGraph` from `A` to `B`, preserving the structure
 ```scala
