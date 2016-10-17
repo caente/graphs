@@ -113,12 +113,14 @@ res7: common.graph.DirectedGraph[Int] =
 ##### `filter(f: A => Boolean)`
 Filters all elements of the `DirectedGraph` according with the predicate `f`, preserving structure
 ```scala
-scala> gr.filter(_ % 2 == 0)
-res8: common.graph.DirectedGraph[Int] =
-10 -> 2, 4, 6, 8
-6 -> 2, 4
+scala> gr.filter(_ % 3 >= 1)
+res5: common.graph.DirectedGraph[Int] =
+5 -> 2, 4
+10 -> 2, 4, 8
+1 ->
 2 ->
-8 -> 2, 4, 6
+7 -> 2, 4
+8 -> 2, 4
 4 -> 2
 ```
 
