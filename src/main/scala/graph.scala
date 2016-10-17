@@ -67,7 +67,7 @@ package object graph {
     }
 
     def fromNode(f: A => Boolean): DirectedGraph[A] = {
-      val (graph, _) = dfs(nodes.filter(f), Graph.empty[A], HashSet.empty)((a, gr) => gr.updated(a, adjacents(a)))
+      val (graph, _) = dfs(nodes.filter(f), Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))
       DirectedGraph(graph)
     }
 
