@@ -15,12 +15,7 @@ package object graph {
   object Graph {
     case class Cycle[A](values: List[A])
 
-    def addEdge[A](start: A, end: A, ds: Graph[A]): Graph[A] =
-      ds.updated(start, ds.getOrElse(start, Nil) :+ end)
-
     def empty[A] = HashMap.empty[A, List[A]]
-
-    def disconnected[A](as: List[A]) = HashMap(as.map(_ -> Nil): _*)
 
     def hasCycle[A: Eq](data: Graph[A]): List[A] = {
       def stoppedAtCycle(a: A, acc: List[A]): List[A] = {
