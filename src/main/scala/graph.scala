@@ -17,6 +17,9 @@ package object graph {
 
     def empty[A] = HashMap.empty[A, List[A]]
 
+    def addEdge[A](start: A, end: A, ds: Graph[A]): Graph[A] =
+      ds.updated(start, (ds.getOrElse(start, Nil) :+ end).distinct)
+
     def hasCycle[A: Eq](data: Graph[A]): List[A] = {
       def stoppedAtCycle(a: A, acc: List[A]): List[A] = {
         data.get(a).toList.flatten match {
@@ -87,7 +90,24 @@ package object graph {
   }
   object DirectedGraph {
 
-    def apply[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+    def byProximity[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+      def loop(ns: List[A], gr: Graph[A]): Graph[A] = {
+        ns match {
+          case Nil => gr
+          case x :: y :: xs if relation(x, y) => loop(y :: xs, Graph.addEdge(x, y, gr))
+          case x :: y :: xs =>
+            val gr2 = loop(x :: xs, gr)
+            loop(y :: xs, gr2)
+          case x :: Nil => gr.updated(x, Nil)
+        }
+      }
+      val gr = loop(nodes, Graph.empty)
+      val cycle = Graph.hasCycle(gr)
+      if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
+      else Xor.right(DirectedGraph(gr))
+    }
+
+    def global[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
       def loop(els: List[A], acc: Graph[A]): Xor[Graph.Cycle[A], Graph[A]] = els match {
         case Nil => Xor.right(acc)
         case x :: xs =>
@@ -96,14 +116,14 @@ package object graph {
           if (cycle.nonEmpty) Xor.left[Graph.Cycle[A], Graph[A]](Graph.Cycle(cycle))
           else loop(xs, updated)
       }
-      loop(nodes, HashMap.empty).map(DirectedGraph(_))
+      loop(nodes, Graph.empty).map(DirectedGraph(_))
     }
 
   }
 
-  val ls = (1 to 10).toList
+  val ls = (1 to 10).toList.reverse
   val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
-  val g = DirectedGraph(ls)(smallerAndEven)
+  val g = DirectedGraph.byProximity(ls)(smallerAndEven)
   val gr = g.getOrElse(throw new Exception())
   def time[A](f: => A): A = {
     val start = DateTime.now
