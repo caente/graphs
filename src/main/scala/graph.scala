@@ -91,17 +91,17 @@ package object graph {
   object DirectedGraph {
 
     def byProximity[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
-      def loop(ns: List[A], gr: Graph[A]): Graph[A] = {
+      def dfs(ns: List[A], gr: Graph[A]): Graph[A] = {
         ns match {
           case Nil => gr
-          case x :: y :: xs if relation(x, y) => loop(y :: xs, Graph.addEdge(x, y, gr))
-          case x :: y :: xs =>
-            val gr2 = loop(x :: xs, gr)
-            loop(y :: xs, gr2)
           case x :: Nil => gr.updated(x, Nil)
+          case x :: y :: xs if relation(x, y) => dfs(y :: xs, Graph.addEdge(x, y, gr))
+          case x :: y :: xs =>
+            val gr2 = dfs(x :: xs, gr)
+            dfs(y :: xs, gr2)
         }
       }
-      val gr = loop(nodes, Graph.empty)
+      val gr = dfs(nodes, Graph.empty)
       val cycle = Graph.hasCycle(gr)
       if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
       else Xor.right(DirectedGraph(gr))
@@ -121,8 +121,8 @@ package object graph {
 
   }
 
-  val ls = (1 to 10).toList.reverse
-  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
+  val ls = (1 to 20).toList.reverse
+  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 % a2 > 2
   val g = DirectedGraph.byProximity(ls)(smallerAndEven)
   val gr = g.getOrElse(throw new Exception())
   def time[A](f: => A): A = {
