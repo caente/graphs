@@ -51,9 +51,19 @@ package object graph {
         data.collect { case (a, as) if f(a) => a -> as.filter(f) }
       )
 
+    def expand[B: Eq](f: A => List[B]): DirectedGraph[B] =
+      DirectedGraph(
+        nodes.foldLeft(Graph.empty[B]) {
+          (gr, a) =>
+            f(a).foldLeft(gr) {
+              (gr2, b) => gr2.updated(b, data(a).flatMap(f))
+            }
+        }
+      )
+
     def map[B: Eq](f: A => B): DirectedGraph[B] =
       DirectedGraph(
-        data.map { case (a, as) => f(a) -> as.map(f) }
+        dfs(nodes, Graph.empty[B])((a, gr) => gr.updated(f(a), adjacents(a).map(f)))._1
       )
 
     private def dfs[B](ns: List[A], s: B, z: HashSet[A] = HashSet.empty)(f: (A, B) => B): (B, HashSet[A]) = {
