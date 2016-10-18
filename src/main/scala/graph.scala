@@ -79,6 +79,9 @@ package object graph {
       }
     }
 
+    def connected(x: A, y: A): Boolean =
+      fromNode(_ === x).nodes.exists(_ === y)
+
     def fromNode(f: A => Boolean): DirectedGraph[A] = {
       val (graph, _) = dfs(nodes.filter(f), Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))
       DirectedGraph(graph)
@@ -90,24 +93,7 @@ package object graph {
   }
   object DirectedGraph {
 
-    def byProximity[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
-      def dfs(ns: List[A], gr: Graph[A]): Graph[A] = {
-        ns match {
-          case Nil => gr
-          case x :: Nil => gr.updated(x, Nil)
-          case x :: y :: xs if relation(x, y) => dfs(y :: xs, Graph.addEdge(x, y, gr))
-          case x :: y :: xs =>
-            val gr2 = dfs(x :: xs, gr)
-            dfs(y :: xs, gr2)
-        }
-      }
-      val gr = dfs(nodes, Graph.empty)
-      val cycle = Graph.hasCycle(gr)
-      if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
-      else Xor.right(DirectedGraph(gr))
-    }
-
-    def global[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+    def apply[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
       def loop(els: List[A], acc: Graph[A]): Xor[Graph.Cycle[A], Graph[A]] = els match {
         case Nil => Xor.right(acc)
         case x :: xs =>
@@ -121,10 +107,9 @@ package object graph {
 
   }
 
-  val ls = (1 to 20).toList.reverse
-  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 % a2 > 2
-  val g = DirectedGraph.byProximity(ls)(smallerAndEven)
-  val gr = g.getOrElse(throw new Exception())
+  val ls = (1 to 10).toList
+  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
+  val gr = DirectedGraph(ls)(smallerAndEven).getOrElse(throw new Exception())
   def time[A](f: => A): A = {
     val start = DateTime.now
     val r = f

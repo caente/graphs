@@ -93,6 +93,15 @@ scala> gr.fromNode(_ === 10).nodesSorted
 res0: List[Int] = List(10, 8, 6, 4, 2)
 ```
 
+##### `connected(x: A, y: A):Boolean`
+Returns `true` if there is a path from x to `y`, it doesn't matter if there is a path from `y` to `x` (it would be `false` in that case) 
+```scala
+scala> gr.connected(8, 2)
+res0: Boolean = true
+scala> gr.connected(2, 8)
+res1: Boolean = false
+```
+
 ##### `map[B](f: A => B):DirectedGraph[B]`
 Transforms every node of the `DirectedGraph` from `A` to `B`, preserving the structure
 ```scala
