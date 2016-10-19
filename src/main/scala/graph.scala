@@ -77,8 +77,7 @@ package object graph {
       }
     }
 
-    def connected(x: A, y: A): Boolean =
-      dfs(List(x), List.empty[A])(_ :: _)._2.exists(_ === y)
+    def connected(x: A, y: A): Boolean = path(x, y).nonEmpty
 
     def path(x: A, y: A): List[A] = {
       val nodesFromX = dfs(List(x), List.empty[A])(_ :: _)._1
