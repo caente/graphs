@@ -32,7 +32,7 @@ package object graph {
     }
   }
 
-  final case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
+  sealed abstract case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
 
     def adjacents(a: A): List[A] = data.get(a).toList.flatten
 
@@ -42,20 +42,18 @@ package object graph {
       case ((initials, finals, nodes), a) => (initials, finals, a :: nodes)
     }
 
-    val nodesSorted: List[A] = {
-      val (sorted, _) = nodes.foldLeft((List.empty[A], HashSet.empty[A])) {
+    val nodesSorted: List[A] =
+      nodes.foldLeft((List.empty[A], HashSet.empty[A])) {
         case ((sorted, visited), a) => dfs(List(a), sorted, visited)(_ :: _)
-      }
-      sorted
-    }
+      }._1
 
     def filter(f: A => Boolean): DirectedGraph[A] =
-      DirectedGraph(
+      DirectedGraph.unsafe(
         data.collect { case (a, as) if f(a) => a -> as.filter(f) }
       )
 
     def expand[B: Eq](f: A => List[B]): DirectedGraph[B] =
-      DirectedGraph(
+      DirectedGraph.unsafe(
         nodes.foldLeft(Graph.empty[B]) {
           (gr, a) =>
             f(a).foldLeft(gr) {
@@ -65,7 +63,7 @@ package object graph {
       )
 
     def map[B: Eq](f: A => B): DirectedGraph[B] =
-      DirectedGraph(
+      DirectedGraph.unsafe(
         dfs(nodes, Graph.empty[B])((a, gr) => gr.updated(f(a), adjacents(a).map(f)))._1
       )
 
@@ -80,11 +78,15 @@ package object graph {
     }
 
     def connected(x: A, y: A): Boolean =
-      fromNode(_ === x).nodes.exists(_ === y)
+      dfs(List(x), List.empty[A])(_ :: _)._2.exists(_ === y)
+
+    def path(x: A, y: A): List[A] =
+      dfs(List(x), List.empty[A])(_ :: _)._1.takeWhile(_ =!= y) :+ y
 
     def fromNode(f: A => Boolean): DirectedGraph[A] = {
-      val (graph, _) = dfs(nodes.filter(f), Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))
-      DirectedGraph(graph)
+      DirectedGraph.unsafe(
+        dfs(nodes.filter(f), Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))._1
+      )
     }
 
     override def toString = data.map {
@@ -93,16 +95,23 @@ package object graph {
   }
   object DirectedGraph {
 
+    def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
+    def apply[A: Eq](gr: Graph[A]): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+      val cycle = Graph.hasCycle(gr)
+      if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
+      else Xor.right(new DirectedGraph(gr) {})
+    }
+
     def apply[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
       def loop(els: List[A], acc: Graph[A]): Xor[Graph.Cycle[A], Graph[A]] = els match {
         case Nil => Xor.right(acc)
         case x :: xs =>
           val updated = acc.updated(x, nodes.filter(s => x =!= s && relation(x, s)))
           val cycle = Graph.hasCycle(updated)
-          if (cycle.nonEmpty) Xor.left[Graph.Cycle[A], Graph[A]](Graph.Cycle(cycle))
+          if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
           else loop(xs, updated)
       }
-      loop(nodes, Graph.empty).map(DirectedGraph(_))
+      loop(nodes, Graph.empty).map(new DirectedGraph(_) {})
     }
 
   }

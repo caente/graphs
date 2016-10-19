@@ -133,4 +133,17 @@ res5: common.graph.DirectedGraph[Int] =
 4 -> 2
 ```
 
+##### `path(x:A, y:A):List[A]`
+Returns the trail of nodes from `x` to `y`
+```scala
+scala> gr.path(8, 4)
+res0: List[Int] = List(8, 6, 4)
+```
+
+##### `connected(x:A, y:A):Boolean`
+True if it exists a path between two nodes
+```scala
+scala> gr.connected(8, 4)
+res1: Boolean = true
+```
 
