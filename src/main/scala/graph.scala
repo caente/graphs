@@ -80,8 +80,11 @@ package object graph {
     def connected(x: A, y: A): Boolean =
       dfs(List(x), List.empty[A])(_ :: _)._2.exists(_ === y)
 
-    def path(x: A, y: A): List[A] =
-      dfs(List(x), List.empty[A])(_ :: _)._1.takeWhile(_ =!= y) :+ y
+    def path(x: A, y: A): List[A] = {
+      val nodesFromX = dfs(List(x), List.empty[A])(_ :: _)._1
+      if (nodesFromX.exists(_ === y)) nodesFromX.takeWhile(_ =!= y) :+ y
+      else Nil
+    }
 
     def fromNode(f: A => Boolean): DirectedGraph[A] = {
       DirectedGraph.unsafe(

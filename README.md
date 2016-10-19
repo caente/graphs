@@ -102,6 +102,15 @@ scala> gr.connected(2, 8)
 res1: Boolean = false
 ```
 
+##### `path(x:A, y:A):List[A]`
+Returns the trail of nodes from `x` to `y`
+```scala
+scala> gr.path(8, 4)
+res0: List[Int] = List(8, 6, 4)
+scala> gr.path(4, 8)
+res1: List[Int] = List()
+```
+
 ##### `map[B](f: A => B):DirectedGraph[B]`
 Transforms every node of the `DirectedGraph` from `A` to `B`, preserving the structure
 ```scala
@@ -133,17 +142,4 @@ res5: common.graph.DirectedGraph[Int] =
 4 -> 2
 ```
 
-##### `path(x:A, y:A):List[A]`
-Returns the trail of nodes from `x` to `y`
-```scala
-scala> gr.path(8, 4)
-res0: List[Int] = List(8, 6, 4)
-```
-
-##### `connected(x:A, y:A):Boolean`
-True if it exists a path between two nodes
-```scala
-scala> gr.connected(8, 4)
-res1: Boolean = true
-```
 
