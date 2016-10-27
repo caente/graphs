@@ -3,7 +3,7 @@
 Tiny library for exploring Graph implementations in Scala
 
 ### DirectedGraph
-So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deap First" approach for searching. The internal representation of the graph is a a `HashMap[A, List[A]]`, where the key is the node, and the values are the nodes for which the key as a an edge with.
+So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deep First Search" approach for searching. The internal representation of the graph is a a `HashMap[A, List[A]]`, where the key is the node, and the values are the nodes for which the key as a an edge with.
 
 #### Creating a `DirectedGraph`: 
 For now the only way to create a `DirectedGraph` is by the `apply` method of its companion object:
