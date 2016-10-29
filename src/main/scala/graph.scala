@@ -17,9 +17,6 @@ package object graph {
 
     def empty[A] = HashMap.empty[A, Set[A]]
 
-    def addEdge[A](start: A, end: A, ds: Graph[A]): Graph[A] =
-      ds.updated(start, (ds.getOrElse(start, HashSet.empty) + end))
-
     def hasCycle[A: Eq](data: Graph[A]): List[A] = {
       def stoppedAtCycle(a: A, acc: List[A]): List[A] = {
         data.get(a).toList.flatten match {
@@ -104,18 +101,23 @@ package object graph {
       else Xor.right(new DirectedGraph(gr) {})
     }
 
-    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
-      def loop(els: List[A], acc: Graph[A]): Xor[Graph.Cycle[A], Graph[A]] = els match {
-        case Nil => Xor.right(acc)
-        case x :: xs =>
-          val updated = acc.updated(x, nodes.toSet.filter(s => x =!= s && relation(x, s)))
-          val cycle = Graph.hasCycle(updated)
-          if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
-          else loop(xs, updated)
-      }
-      loop(nodes.toList, Graph.empty).map(new DirectedGraph(_) {})
+    def addEdge[A: Eq](start: A, end: A, ds: DirectedGraph[A]): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+      val updated = ds.data.updated(start, (ds.data.getOrElse(start, HashSet.empty) + end))
+      val cycle = Graph.hasCycle(updated)
+      if (cycle.nonEmpty) Xor.left(Graph.Cycle(cycle))
+      else Xor.right(new DirectedGraph(updated) {})
     }
 
+    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+      val emptyGraph = Xor.right[Graph.Cycle[A], DirectedGraph[A]](new DirectedGraph(Graph.empty[A]) {})
+      nodes.foldLeft(emptyGraph) {
+        (xgr, x) =>
+          nodes.foldLeft(xgr) {
+            case (Xor.Right(gr), s) if x =!= s && relation(x, s) => DirectedGraph.addEdge(x, s, gr)
+            case (grs, _) => grs
+          }
+      }
+    }
   }
 
   val ls = (1 to 10)
