@@ -3,20 +3,19 @@
 Tiny library for exploring Graph implementations in Scala
 
 ### DirectedGraph
-So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deep First" approach for searching. The internal representation of the graph is a a `HashMap[A, List[A]]`, where the key is the node, and the values are the nodes for which the key as an edge with.
+So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deep First" approach for searching. The internal representation of the graph is a a `HashMap[A, Set[A]]`, where the key is the node, and the values are the nodes for which the key as an edge with.
 
-#### Creating a `DirectedGraph`: 
+#### Creating a `DirectedGraph`:
 For now the only way to create a `DirectedGraph` is by the `apply` method of its companion object:
 ```
 object DirectedGraph{
-  def apply[A: Eq](nodes: List[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]]
+  def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]]
 }
 ```
 
 ```scala
-val ls = (1 to 10).toList
-val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0 
-val g = DirectedGraph(ls)(relation)
+val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
+val g = DirectedGraph((1 to 10))(relation)
 val gr = g.getOrElse(throw new Exception())
 ```
 
@@ -39,21 +38,21 @@ res0: String =
 
 #### Operations
 
-##### `nodes:List[A]` 
+##### `nodes:Set[A]`
 All the nodes of this graph
 ```scala
 scala> gr.nodes
 res3: List[Int] = List(4, 8, 3, 7, 2, 9, 6, 1, 10, 5)
 ```
 
-##### `initials:List[A]` 
+##### `initials:Set[A]`
 All nodes without incoming edges
 ```scala
 scala> gr.initials
 res1: List[Int] = List(3, 7, 9, 10, 5)
 ```
 
-##### `finals:List[A]` 
+##### `finals:Set[A]`
 All nodes without outgoing edges
 ```scala
 scala> gr.finals
@@ -68,7 +67,7 @@ scala> gr.nodesSorted
 res4: List[Int] = List(5, 10, 1, 9, 7, 3, 8, 6, 4, 2)
 ```
 
-##### `adjacents(a:A):List[a]`
+##### `adjacents(a:A):Set[a]`
 Nodes with an incoming edge from `a`
 ```scala
 scala> gr.adjacents(10)
@@ -94,7 +93,7 @@ res0: List[Int] = List(10, 8, 6, 4, 2)
 ```
 
 ##### `connected(x: A, y: A):Boolean`
-Returns `true` if there is a path from x to `y`, it doesn't matter if there is a path from `y` to `x` (it would be `false` in that case) 
+Returns `true` if there is a path from x to `y`, it doesn't matter if there is a path from `y` to `x` (it would be `false` in that case)
 ```scala
 scala> gr.connected(8, 2)
 res0: Boolean = true
@@ -141,5 +140,3 @@ res5: common.graph.DirectedGraph[Int] =
 8 -> 2, 4
 4 -> 2
 ```
-
-
