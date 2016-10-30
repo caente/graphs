@@ -32,13 +32,13 @@ scala> for {
 res2: cats.data.Xor[common.graph.Graph.Cycle[Int],common.graph.DirectedGraph[Int]] = Left(Cycle(List(4, 1, 2, 4)))
 ```
 
-##### `DirectedGraph(nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]]`
+##### `DAG(nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]]`
 
-Another way to create a `DirectedGraph` is by the `apply` method of its companion object, which uses a list of nodes and a relationship between the nodes:
+Another way to create a `DirectedGraph` is by the `apply` method of `DAG`, which uses a list of nodes and a relationship between the nodes:
 
 ```scala
 val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
-val gr = DirectedGraph((1 to 10))(relation).toOption.get
+val gr = DAG((1 to 10))(smallerAndEven).getOrElse(DirectedGraph.empty[Int])
 ```
 
 `gr` is a graph whose nodes are connected by the relation `smallerAndEven` -- i.e. a number is related with another if it's bigger or equals and the other number is even.

@@ -11,12 +11,35 @@ import cats.syntax.foldable._
 
 package object graph {
   type Graph[A] = HashMap[A, Set[A]]
+  type DAG[A] = Xor[Graph.Cycle[A], DirectedGraph[A]]
 
   object Graph {
     case class Cycle[A](values: List[A])
 
     def empty[A] = HashMap.empty[A, Set[A]]
 
+  }
+
+  object DirectedGraph {
+
+    def empty[A: Eq] = unsafe(Graph.empty[A])
+
+    private[graph] def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
+
+  }
+
+  object DAG {
+    def empty[A: Eq]: DAG[A] = Xor.right(DirectedGraph.empty)
+
+    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DAG[A] = {
+      nodes.foldLeft(DAG.empty[A]) {
+        (xgr, x) =>
+          nodes.foldLeft(xgr) {
+            case (Xor.Right(gr), s) if x =!= s && relation(x, s) => gr.addEdge(x, s)
+            case (grs, _) => grs
+          }
+      }
+    }
   }
 
   sealed abstract case class DirectedGraph[A: Eq] private (val data: Graph[A]) {
@@ -78,7 +101,7 @@ package object graph {
       )
     }
 
-    def addEdge(start: A, end: A): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
+    def addEdge(start: A, end: A): DAG[A] = {
       val cycle = path(end, start)
       if (cycle.nonEmpty) Xor.left(Graph.Cycle(start :: cycle))
       else Xor.right(new DirectedGraph(data.updated(start, (data.getOrElse(start, HashSet.empty) + end))) {})
@@ -89,27 +112,9 @@ package object graph {
     }.mkString("\n")
   }
 
-  object DirectedGraph {
-
-    def empty[A: Eq] = unsafe(Graph.empty[A])
-
-    private[graph] def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
-
-    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
-      val emptyGraph = Xor.right[Graph.Cycle[A], DirectedGraph[A]](new DirectedGraph(Graph.empty[A]) {})
-      nodes.foldLeft(emptyGraph) {
-        (xgr, x) =>
-          nodes.foldLeft(xgr) {
-            case (Xor.Right(gr), s) if x =!= s && relation(x, s) => gr.addEdge(x, s)
-            case (grs, _) => grs
-          }
-      }
-    }
-  }
-
   val ls = (1 to 10)
   val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
-  val gr = DirectedGraph(ls)(smallerAndEven).getOrElse(throw new Exception())
+  val gr = DAG(ls)(smallerAndEven).getOrElse(DirectedGraph.empty[Int])
   def time[A](f: => A): A = {
     val start = DateTime.now
     val r = f
