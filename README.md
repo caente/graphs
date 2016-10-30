@@ -64,21 +64,21 @@ res0: String =
 All the nodes of this graph
 ```scala
 scala> gr.nodes
-res3: List[Int] = List(4, 8, 3, 7, 2, 9, 6, 1, 10, 5)
+res3: Set[Int] = Set(4, 8, 3, 7, 2, 9, 6, 1, 10, 5)
 ```
 
 ##### `initials:Set[A]`
 All nodes without incoming edges
 ```scala
 scala> gr.initials
-res1: List[Int] = List(3, 7, 9, 10, 5)
+res1: Set[Int] = Set(3, 7, 9, 10, 5)
 ```
 
 ##### `finals:Set[A]`
 All nodes without outgoing edges
 ```scala
 scala> gr.finals
-res2: List[Int] = List(2, 1)
+res2: Set[Int] = Set(2, 1)
 ```
 
 
@@ -93,7 +93,7 @@ res4: List[Int] = List(5, 10, 1, 9, 7, 3, 8, 6, 4, 2)
 Nodes with an incoming edge from `a`
 ```scala
 scala> gr.adjacents(10)
-res5: List[Int] = List(2, 4, 6, 8)
+res5: Set[Int] = Set(2, 4, 6, 8)
 ```
 
 ##### `fromNode(f: A => Boolean):Graph[A]`
