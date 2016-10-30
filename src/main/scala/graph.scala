@@ -103,7 +103,8 @@ package object graph {
 
     def addEdge(start: A, end: A): DAG[A] = {
       val cycle = path(end, start)
-      if (cycle.nonEmpty) Xor.left(Graph.Cycle(start :: cycle))
+      if (start === end) Xor.right(this)
+      else if (cycle.nonEmpty) Xor.left(Graph.Cycle(start :: cycle))
       else Xor.right(new DirectedGraph(data.updated(start, (data.getOrElse(start, HashSet.empty) + end))) {})
     }
 
