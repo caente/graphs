@@ -5,9 +5,9 @@ Tiny library for exploring Graph implementations in Scala
 ### DirectedGraph
 So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deep First" approach for searching. The internal representation of the graph is a a `HashMap[A, Set[A]]`, where the key is the node, and the values are the nodes for which the key as an edge with.
 
-#### Creating a `DirectedGraph`:
+### Creating a `DirectedGraph`:
 
-##### addEdge(start: A, end: B):Xor[Graph.Cycle[A], DirectedGraph[A]]
+#### addEdge(start: A, end: B):Xor[Graph.Cycle[A], DirectedGraph[A]]
 
 One way to create a DAG is starting from nothing and start adding edges.
 
@@ -32,7 +32,7 @@ scala> for {
 res2: cats.data.Xor[common.graph.Graph.Cycle[Int],common.graph.DirectedGraph[Int]] = Left(Cycle(List(4, 1, 2, 4)))
 ```
 
-##### From vertices and relations
+#### From vertices and relations
 Another way to create a `DirectedGraph` is by the `apply` method of its companion object, which uses a list of nodes and a relationship between the nodes:
 ```
 object DirectedGraph{
