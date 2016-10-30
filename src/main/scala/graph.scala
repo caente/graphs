@@ -61,7 +61,7 @@ package object graph {
 
     val order: List[A] =
       nodes.foldLeft((List.empty[A], HashSet.empty[A])) {
-        case ((sorted, visited), a) => dfs(Set(a), sorted, visited)(_ :: _)
+        case ((sorted, visited), a) => fold(sorted)(Set(a), visited)(_ :: _)
       }._1
 
     def filter(f: A => Boolean): DirectedGraph[A] =
@@ -81,30 +81,30 @@ package object graph {
 
     def map[B: Eq](f: A => B): DirectedGraph[B] =
       DirectedGraph.unsafe(
-        dfs(nodes, Graph.empty[B])((a, gr) => gr.updated(f(a), adjacents(a).map(f)))._1
+        fold(Graph.empty[B])(nodes)((a, gr) => gr.updated(f(a), adjacents(a).map(f)))._1
       )
 
-    private def dfs[B](ns: Set[A], s: B, z: HashSet[A] = HashSet.empty)(f: (A, B) => B): (B, HashSet[A]) =
-      if (ns.isEmpty) (s, z)
-      else if (z.contains(ns.head)) dfs(ns.tail, s, z)(f)
+    private def fold[B](z: B)(ns: Set[A], vs: HashSet[A] = HashSet.empty)(f: (A, B) => B): (B, HashSet[A]) =
+      if (ns.isEmpty) (z, vs)
+      else if (vs.contains(ns.head)) fold(z)(ns.tail, vs)(f)
       else {
         val x = ns.head
         val xs = ns.tail
-        val (result, visited) = dfs(adjacents(x), s, z + x)(f)
-        dfs(xs.toSet, f(x, result), visited)(f)
+        val (result, visited) = fold(z)(adjacents(x), vs + x)(f)
+        fold(f(x, result))(xs.toSet, visited)(f)
       }
 
     def connected(x: A, y: A): Boolean = path(x, y).nonEmpty
 
     def path(x: A, y: A): List[A] = {
-      val nodesFromX = dfs(Set(x), List.empty[A])(_ :: _)._1
+      val nodesFromX = fold(List.empty[A])(Set(x))(_ :: _)._1
       if (nodesFromX.exists(_ === y)) nodesFromX.takeWhile(_ =!= y) :+ y
       else Nil
     }
 
     def fromNode(f: A => Boolean): DirectedGraph[A] = {
       DirectedGraph.unsafe(
-        dfs(nodes.filter(f), Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))._1
+        fold(Graph.empty[A])(nodes.filter(f))((a, gr) => gr.updated(a, adjacents(a)))._1
       )
     }
 
