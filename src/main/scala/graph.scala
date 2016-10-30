@@ -46,10 +46,17 @@ package object graph {
 
     def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 
-    val (initials: Set[A], finals: Set[A], nodes: Set[A]) = data.keys.toList.foldLeft((HashSet.empty[A], HashSet.empty[A], HashSet.empty[A])) {
-      case ((initials, finals, nodes), a) if adjacents(a).isEmpty => (initials, finals + a, nodes + a)
-      case ((initials, finals, nodes), a) if data.values.forall(!_.exists(_ === a)) => (initials + a, finals, nodes + a)
-      case ((initials, finals, nodes), a) => (initials, finals, nodes + a)
+    val (
+      initials: Set[A],
+      finals: Set[A],
+      nodes: Set[A]
+      ) = data.keys.toList.foldLeft((HashSet.empty[A], HashSet.empty[A], HashSet.empty[A])) {
+      case ((initials, finals, nodes), a) if adjacents(a).isEmpty =>
+        (initials, finals + a, nodes + a)
+      case ((initials, finals, nodes), a) if data.values.forall(!_.exists(_ === a)) =>
+        (initials + a, finals, nodes + a)
+      case ((initials, finals, nodes), a) =>
+        (initials, finals, nodes + a)
     }
 
     val order: List[A] =
