@@ -108,12 +108,13 @@ package object graph {
       )
     }
 
-    def addEdge(start: A, end: A): DAG[A] = {
-      val cycle = path(end, start)
-      if (start === end) Xor.right(this)
-      else if (cycle.nonEmpty) Xor.left(Graph.Cycle(start :: cycle))
-      else Xor.right(new DirectedGraph(data.updated(start, (data.getOrElse(start, HashSet.empty) + end))) {})
-    }
+    def addEdge(start: A, end: A): DAG[A] =
+      path(end, start) match {
+        case Nil =>
+          Xor.right(DirectedGraph.unsafe(data.updated(start, (data.getOrElse(start, HashSet.empty) + end))))
+        case x :: Nil => Xor.right(this)
+        case cycle => Xor.left(Graph.Cycle(start :: cycle))
+      }
 
     override def toString = data.map {
       case (a, as) => s"$a -> ${as.mkString(", ")}"
