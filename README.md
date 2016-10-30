@@ -6,7 +6,34 @@ Tiny library for exploring Graph implementations in Scala
 So far the only implementation is "Directed Acyclic Graph", and is implemented with "Deep First" approach for searching. The internal representation of the graph is a a `HashMap[A, Set[A]]`, where the key is the node, and the values are the nodes for which the key as an edge with.
 
 #### Creating a `DirectedGraph`:
-For now the only way to create a `DirectedGraph` is by the `apply` method of its companion object:
+
+##### addEdge(start: A, end: B):Xor[Graph.Cycle[A], DirectedGraph[A]]
+
+One way to create a DAG is starting from nothing and start adding edges.
+
+```scala
+scala> for {
+     | gr1 <- DirectedGraph.empty[Int].addEdge(1,2)
+     | gr2 <- gr1.addEdge(2, 4)
+     | } yield gr2
+res3: cats.data.Xor[common.graph.Graph.Cycle[Int],common.graph.DirectedGraph[Int]] =
+Right(1 -> 2
+2 -> 4)
+```
+
+In case we a cycle is introduced, Xor.Left[Graph.Cycle] will be returned:
+
+```scala
+scala> for {
+     | gr1 <- DirectedGraph.empty[Int].addEdge(1,2)
+     | gr2 <- gr1.addEdge(2, 4)
+     | gr3 <- gr2.addEdge(4, 1)
+     | } yield gr3
+res2: cats.data.Xor[common.graph.Graph.Cycle[Int],common.graph.DirectedGraph[Int]] = Left(Cycle(List(4, 1, 2, 4)))
+```
+
+##### From vertices and relations
+Another way to create a `DirectedGraph` is by the `apply` method of its companion object, which uses a list of nodes and a relationship between the nodes:
 ```
 object DirectedGraph{
   def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]]
@@ -15,8 +42,7 @@ object DirectedGraph{
 
 ```scala
 val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
-val g = DirectedGraph((1 to 10))(relation)
-val gr = g.getOrElse(throw new Exception())
+val gr = DirectedGraph((1 to 10))(relation).toOption.get
 ```
 
 `gr` is a graph whose nodes are connected by the relation `smallerAndEven` -- i.e. a number is related with another if it's bigger or equals and the other number is even.

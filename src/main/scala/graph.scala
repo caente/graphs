@@ -91,6 +91,8 @@ package object graph {
 
   object DirectedGraph {
 
+    def empty[A: Eq] = unsafe(Graph.empty[A])
+
     private[graph] def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
 
     def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): Xor[Graph.Cycle[A], DirectedGraph[A]] = {
