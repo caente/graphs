@@ -21,7 +21,7 @@ Right(1 -> 2
 2 -> 4)
 ```
 
-In case we a cycle is introduced, Xor.Left[Graph.Cycle] will be returned:
+In case a cycle is introduced, Xor.Left[Graph.Cycle] will be returned:
 
 ```scala
 scala> for {
