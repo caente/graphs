@@ -52,7 +52,7 @@ package object graph {
       case ((initials, finals, nodes), a) => (initials, finals, nodes + a)
     }
 
-    val nodesSorted: List[A] =
+    val order: List[A] =
       nodes.foldLeft((List.empty[A], HashSet.empty[A])) {
         case ((sorted, visited), a) => dfs(Set(a), sorted, visited)(_ :: _)
       }._1

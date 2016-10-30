@@ -82,10 +82,10 @@ res2: Set[Int] = Set(2, 1)
 ```
 
 
-##### `nodesSorted:List[A]`
+##### `order:List[A]`
 All nodes topologically sorted
 ```scala
-scala> gr.nodesSorted
+scala> gr.order
 res4: List[Int] = List(5, 10, 1, 9, 7, 3, 8, 6, 4, 2)
 ```
 
@@ -110,7 +110,7 @@ res6: common.graph.DirectedGraph[Int] =
 
 Now we can know the topological order for the graph that starts with `10`
 ```scala
-scala> gr.fromNode(_ === 10).nodesSorted
+scala> gr.fromNode(_ === 10).order
 res0: List[Int] = List(10, 8, 6, 4, 2)
 ```
 
