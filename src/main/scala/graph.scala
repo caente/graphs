@@ -42,7 +42,7 @@ package object graph {
     }
   }
 
-  sealed abstract case class DirectedGraph[A: Eq] private (val data: Graph[A]) {
+  sealed abstract case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
 
     def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 

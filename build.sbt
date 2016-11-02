@@ -1,5 +1,7 @@
 scalaVersion := "2.11.8"
 
+organization := "caente"
+
 libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "org.typelevel" %% "cats" % "0.7.2",
