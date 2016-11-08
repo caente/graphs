@@ -135,9 +135,21 @@ res1: List[Int] = List()
 
 ##### `reverse: DirectedGraph[A]`
 The graph with all the edges inverted
+```scala
+scala> gr.reverse
+res1: common.graph.DirectedGraph[Int] =
+6 -> 10, 9, 7, 8
+2 -> 5, 10, 6, 9, 7, 3, 8, 4
+8 -> 10, 9
+4 -> 5, 10, 6, 9, 7, 8
+```
 
 ##### `previous(a: A): List[A]`
 In a reversed graph, the `order` starting from `a`
+```scala
+scala> gr.previous(8)
+res2: List[Int] = List(9, 10)
+```
 
 ##### `map[B](f: A => B):DirectedGraph[B]`
 Transforms every node of the `DirectedGraph` from `A` to `B`, preserving the structure
