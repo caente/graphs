@@ -108,6 +108,7 @@ res6: common.graph.DirectedGraph[Int] =
 4 -> 2
 ```
 
+
 Now we can know the topological order for the graph that starts with `10`
 ```scala
 scala> gr.fromNode(_ === 10).order
@@ -131,6 +132,12 @@ res0: List[Int] = List(8, 6, 4)
 scala> gr.path(4, 8)
 res1: List[Int] = List()
 ```
+
+##### `reverse: DirectedGraph[A]`
+The graph with all the edges inverted
+
+##### `previous(a: A): List[A]`
+In a reversed graph, the `order` starting from `a`
 
 ##### `map[B](f: A => B):DirectedGraph[B]`
 Transforms every node of the `DirectedGraph` from `A` to `B`, preserving the structure
@@ -161,4 +168,20 @@ res5: common.graph.DirectedGraph[Int] =
 7 -> 2, 4
 8 -> 2, 4
 4 -> 2
+```
+
+
+##### `collect[B: Eq](f: PartialFunction[A, B]): DirectedGraph[B]`
+Similar to collect on other colletions
+```scala
+scala> gr.collect {
+     | case n if n > 4 => n * 5
+     | }
+res0: common.graph.DirectedGraph[Int] =
+25 ->
+45 -> 30, 40
+35 -> 30
+50 -> 30, 40
+40 -> 30
+30 ->
 ```
