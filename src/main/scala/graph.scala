@@ -30,9 +30,14 @@ package object graph {
 
   object DAG {
     def empty[A: Eq]: DAG[A] = Xor.right(DirectedGraph.empty)
+    def disconnected[A: Eq](nodes: Seq[A]): DAG[A] = Xor.right(DirectedGraph.unsafe(
+      nodes.foldLeft(Graph.empty[A]) {
+        (gr, a) => gr.updated(a, Set.empty[A])
+      }
+    ))
 
     def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DAG[A] = {
-      nodes.foldLeft(DAG.empty[A]) {
+      nodes.foldLeft(DAG.disconnected(nodes)) {
         (xgr, x) =>
           nodes.foldLeft(xgr) {
             case (Xor.Right(gr), s) if x =!= s && relation(x, s) => gr.addEdge(x, s)
@@ -74,7 +79,7 @@ package object graph {
         nodes.foldLeft(Graph.empty[B]) {
           (gr, a) =>
             f(a).foldLeft(gr) {
-              (gr2, b) => gr2.updated(b, data(a).flatMap(f))
+              (gr2, b) => gr2.updated(b, adjacents(a).flatMap(f))
             }
         }
       )
@@ -82,6 +87,15 @@ package object graph {
     def map[B: Eq](f: A => B): DirectedGraph[B] =
       DirectedGraph.unsafe(
         fold(nodes)(Graph.empty[B])((a, gr) => gr.updated(f(a), adjacents(a).map(f)))._1
+      )
+
+    def collect[B: Eq](f: PartialFunction[A, B]): DirectedGraph[B] =
+      DirectedGraph.unsafe(
+        fold(nodes)(Graph.empty[B]) {
+        (a, gr) =>
+          if (f.isDefinedAt(a)) gr.updated(f(a), adjacents(a).collect(f))
+          else gr
+      }._1
       )
 
     private def fold[B](ns: Set[A], vs: HashSet[A] = HashSet.empty)(z: B)(f: (A, B) => B): (B, HashSet[A]) =
@@ -93,6 +107,20 @@ package object graph {
         val (result, visited) = fold(adjacents(x), vs + x)(z)(f)
         fold(xs.toSet, visited)(f(x, result))(f)
       }
+
+    def previous(a: A): List[A] =
+      reverse.fromNode(_ === a).order match {
+        case Nil => Nil
+        case _ :: xs => xs
+      }
+
+    def reverse =
+      nodes.foldLeft(DAG.empty[A]) {
+        (gr, a) =>
+          adjacents(a).foldLeft(gr) {
+            (gra, x) => gra.flatMap(_.addEdge(x, a))
+          }
+      }.getOrElse(DirectedGraph.empty[A])
 
     def connected(x: A, y: A): Boolean = path(x, y).nonEmpty
 
