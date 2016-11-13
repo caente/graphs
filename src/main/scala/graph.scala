@@ -52,16 +52,16 @@ package object graph {
     def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 
     val (
-      initials: Set[A],
-      finals: Set[A],
+      roots: Set[A],
+      leafs: Set[A],
       nodes: Set[A]
       ) = data.keys.toList.foldLeft((HashSet.empty[A], HashSet.empty[A], HashSet.empty[A])) {
-      case ((initials, finals, nodes), a) if adjacents(a).isEmpty =>
-        (initials, finals + a, nodes + a)
-      case ((initials, finals, nodes), a) if data.values.forall(!_.exists(_ === a)) =>
-        (initials + a, finals, nodes + a)
-      case ((initials, finals, nodes), a) =>
-        (initials, finals, nodes + a)
+      case ((roots, leafs, nodes), a) if adjacents(a).isEmpty =>
+        (roots, leafs + a, nodes + a)
+      case ((roots, leafs, nodes), a) if data.values.forall(!_.exists(_ === a)) =>
+        (roots + a, leafs, nodes + a)
+      case ((roots, leafs, nodes), a) =>
+        (roots, leafs, nodes + a)
     }
 
     val order: List[A] =
@@ -109,7 +109,7 @@ package object graph {
       }
 
     def previous(a: A): List[A] =
-      reverse.fromNode(_ === a).order match {
+      reverse.withRoot(_ === a).order match {
         case Nil => Nil
         case _ :: xs => xs
       }
@@ -130,7 +130,7 @@ package object graph {
       else Nil
     }
 
-    def fromNode(f: A => Boolean): DirectedGraph[A] = {
+    def withRoot(f: A => Boolean): DirectedGraph[A] = {
       DirectedGraph.unsafe(
         fold(nodes.filter(f))(Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))._1
       )

@@ -67,17 +67,17 @@ scala> gr.nodes
 res3: Set[Int] = Set(4, 8, 3, 7, 2, 9, 6, 1, 10, 5)
 ```
 
-##### `initials:Set[A]`
+##### `roots:Set[A]`
 All nodes without incoming edges
 ```scala
-scala> gr.initials
+scala> gr.roots
 res1: Set[Int] = Set(3, 7, 9, 10, 5)
 ```
 
-##### `finals:Set[A]`
+##### `leafs:Set[A]`
 All nodes without outgoing edges
 ```scala
-scala> gr.finals
+scala> gr.leafs
 res2: Set[Int] = Set(2, 1)
 ```
 
@@ -96,10 +96,10 @@ scala> gr.adjacents(10)
 res5: Set[Int] = Set(2, 4, 6, 8)
 ```
 
-##### `fromNode(f: A => Boolean):Graph[A]`
-A new `DirectedGraph` with `initials` that fulfill the condition `f`
+##### `withRoot(f: A => Boolean):Graph[A]`
+A new `DirectedGraph` with `roots` that fulfill the condition `f`
 ```scala
-scala> gr.fromNode(_ === 10)
+scala> gr.withRoot(_ === 10)
 res6: common.graph.DirectedGraph[Int] =
 10 -> 2, 4, 6, 8
 6 -> 2, 4
@@ -111,7 +111,7 @@ res6: common.graph.DirectedGraph[Int] =
 
 Now we can know the topological order for the graph that starts with `10`
 ```scala
-scala> gr.fromNode(_ === 10).order
+scala> gr.withRoot(_ === 10).order
 res0: List[Int] = List(10, 8, 6, 4, 2)
 ```
 
