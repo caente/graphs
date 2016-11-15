@@ -10,34 +10,39 @@ import collection.immutable.{ HashMap, HashSet }
 import cats.syntax.foldable._
 
 package object graph {
-  type Graph[A] = HashMap[A, Set[A]]
-  type DAG[A] = Xor[Graph.Cycle[A], DirectedGraph[A]]
+
+  trait Relation[A] {
+    def apply(a1: A, a2: A): Boolean
+  }
+
+  type Graph[A, R <: Relation[A]] = HashMap[A, Set[A]]
+  type DAG[A, R <: Relation[A]] = Xor[Graph.Cycle[A], DirectedGraph[A, R]]
 
   object Graph {
     case class Cycle[A](values: List[A])
 
-    def empty[A] = HashMap.empty[A, Set[A]]
+    def empty[A, R <: Relation[A]] = HashMap.empty[A, Set[A]]
 
   }
 
   object DirectedGraph {
 
-    def empty[A: Eq] = unsafe(Graph.empty[A])
+    def empty[A: Eq, R <: Relation[A]] = unsafe(Graph.empty[A, R])
 
-    private[graph] def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
+    private[graph] def unsafe[A: Eq, R <: Relation[A]](gr: Graph[A, R]): DirectedGraph[A, R] = new DirectedGraph(gr) {}
 
   }
 
   object DAG {
-    def empty[A: Eq]: DAG[A] = Xor.right(DirectedGraph.empty)
-    def disconnected[A: Eq](nodes: Seq[A]): DAG[A] = Xor.right(DirectedGraph.unsafe(
-      nodes.foldLeft(Graph.empty[A]) {
+    def empty[A: Eq, R <: Relation[A]]: DAG[A, R] = Xor.right(DirectedGraph.empty)
+    def disconnected[A: Eq, R <: Relation[A]](nodes: Seq[A]): DAG[A, R] = Xor.right(DirectedGraph.unsafe(
+      nodes.foldLeft(Graph.empty[A, R]) {
         (gr, a) => gr.updated(a, Set.empty[A])
       }
     ))
 
-    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DAG[A] = {
-      nodes.foldLeft(DAG.disconnected(nodes)) {
+    def apply[A: Eq, R <: Relation[A]](nodes: Seq[A])(relation: R): DAG[A, R] = {
+      nodes.foldLeft(DAG.disconnected[A, R](nodes)) {
         (xgr, x) =>
           nodes.foldLeft(xgr) {
             case (Xor.Right(gr), s) if x =!= s && relation(x, s) => gr.addEdge(x, s)
@@ -47,7 +52,7 @@ package object graph {
     }
   }
 
-  sealed abstract case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
+  sealed abstract case class DirectedGraph[A: Eq, R <: Relation[A]] private (private val data: Graph[A, R]) {
 
     def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 
@@ -150,8 +155,10 @@ package object graph {
   }
 
   val ls = (1 to 10)
-  val smallerAndEven: (Int, Int) => Boolean = (a1, a2) => a1 >= a2 && a2 % 2 == 0
-  val gr = DAG(ls)(smallerAndEven).getOrElse(DirectedGraph.empty[Int])
+  case class SmallerAndEven() extends Relation[Int] {
+    def apply(a1: Int, a2: Int): Boolean = a1 >= a2 && a2 % 2 == 0
+  }
+  val gr = DAG(ls)(SmallerAndEven()).getOrElse(DirectedGraph.empty[Int, SmallerAndEven])
   def time[A](f: => A): A = {
     val start = DateTime.now
     val r = f
