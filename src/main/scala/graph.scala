@@ -24,7 +24,7 @@ package object graph {
 
     def empty[A: Eq] = unsafe(Graph.empty[A])
 
-    def create[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DirectedGraph[A] =
+    def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DirectedGraph[A] =
       DAG(nodes)(relation).getOrElse(empty)
 
     private[graph] def unsafe[A: Eq](gr: Graph[A]): DirectedGraph[A] = new DirectedGraph(gr) {}
