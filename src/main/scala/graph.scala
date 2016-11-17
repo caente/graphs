@@ -33,16 +33,10 @@ package object graph {
 
   object DAG {
     def empty[A: Eq]: DAG[A] = Xor.right(DirectedGraph.empty)
-    def disconnected[A: Eq](nodes: Seq[A]): DAG[A] = Xor.right(DirectedGraph.unsafe(
-      nodes.foldLeft(Graph.empty[A]) {
-        (gr, a) => gr.updated(a, Set.empty[A])
-      }
-    ))
-
     def apply[A: Eq](nodes: Seq[A])(relation: (A, A) => Boolean): DAG[A] = {
-      nodes.foldLeft(DAG.disconnected(nodes)) {
+      nodes.foldLeft(DAG.empty[A]) {
         (xgr, x) =>
-          nodes.foldLeft(xgr) {
+          nodes.foldLeft(xgr.flatMap(_.addNode(x))) {
             case (Xor.Right(gr), s) if x =!= s && relation(x, s) => gr.addEdge(x, s)
             case (grs, _) => grs
           }
@@ -138,6 +132,10 @@ package object graph {
         fold(nodes.filter(f))(Graph.empty[A])((a, gr) => gr.updated(a, adjacents(a)))._1
       )
     }
+
+    def addNode(node: A): DAG[A] =
+      if (nodes.contains(node)) Xor.right(this)
+      else Xor.right(DirectedGraph.unsafe(data.updated(node, Set.empty)))
 
     def addEdge(start: A, end: A): DAG[A] =
       path(end, start) match {
