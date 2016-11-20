@@ -10,6 +10,13 @@ import collection.immutable.{ HashMap, HashSet }
 import cats.syntax.foldable._
 
 package object graph {
+
+  case class Expanded[A, B](original: A, expanded: B) {
+    def map[C](f: B => C): Expanded[A, C] = Expanded(original, f(expanded))
+    def flatMap[C](f: B => Expanded[B, C]): Expanded[A, C] = Expanded(original, f(expanded).expanded)
+  }
+  implicit def eqExpanded[A, B] = Eq.fromUniversalEquals[Expanded[A, B]]
+
   type Graph[A] = HashMap[A, Set[A]]
   type DAG[A] = Xor[Graph.Cycle[A], DirectedGraph[A]]
 
@@ -71,12 +78,12 @@ package object graph {
         data.collect { case (a, as) if f(a) => a -> as.filter(f) }
       )
 
-    def expand[B: Eq](f: A => Set[B]): DirectedGraph[B] =
+    def expand[B: Eq](f: A => Set[B]): DirectedGraph[Expanded[A, B]] =
       DirectedGraph.unsafe(
-        nodes.foldLeft(Graph.empty[B]) {
+        nodes.foldLeft(Graph.empty[Expanded[A, B]]) {
           (gr, a) =>
             f(a).foldLeft(gr) {
-              (gr2, b) => gr2.updated(b, adjacents(a).flatMap(f))
+              (gr2, b) => gr2.updated(Expanded(a, b), adjacents(a).flatMap(n => f(n).map(Expanded(n, _))))
             }
         }
       )
