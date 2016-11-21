@@ -11,9 +11,10 @@ import cats.syntax.foldable._
 
 package object graph {
 
-  case class Expanded[A, B](original: A, expanded: B) {
+  case class Expanded[A: Eq, B](original: A, expanded: B) {
     def map[C](f: B => C): Expanded[A, C] = Expanded(original, f(expanded))
-    def flatMap[C](f: B => Expanded[B, C]): Expanded[A, C] = Expanded(original, f(expanded).expanded)
+    def flatten[C: Eq, D](implicit ev: A =:= Expanded[C, D]): Expanded[C, B] = Expanded(original.original, expanded)
+    def sameOrigin[C](o: Expanded[A, C]): Boolean = o.original === original
   }
 
   implicit def eqExpanded[A, B] = Eq.fromUniversalEquals[Expanded[A, B]]
@@ -79,15 +80,18 @@ package object graph {
         data.collect { case (a, as) if f(a) => a -> as.filter(f) }
       )
 
-    def expand[B: Eq](f: A => Set[B]): DirectedGraph[Expanded[A, B]] =
+    def expandBy[B: Eq, K: Eq](g: A => K)(f: A => Set[B]): DirectedGraph[Expanded[K, B]] =
       DirectedGraph.unsafe(
-        nodes.foldLeft(Graph.empty[Expanded[A, B]]) {
+        nodes.foldLeft(Graph.empty[Expanded[K, B]]) {
           (gr, a) =>
             f(a).foldLeft(gr) {
-              (gr2, b) => gr2.updated(Expanded(a, b), adjacents(a).flatMap(n => f(n).map(Expanded(n, _))))
+              (gr2, b) => gr2.updated(Expanded(g(a), b), adjacents(a).flatMap(n => f(n).map(Expanded(g(n), _))))
             }
         }
       )
+
+    def expand[B: Eq](f: A => Set[B]): DirectedGraph[Expanded[A, B]] =
+      expandBy(identity)(f)
 
     def map[B: Eq](f: A => B): DirectedGraph[B] =
       DirectedGraph.unsafe(
