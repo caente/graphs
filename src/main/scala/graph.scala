@@ -14,7 +14,7 @@ package object graph {
   case class Expanded[A: Eq, B](original: A, expanded: B) {
     def map[C](f: B => C): Expanded[A, C] = Expanded(original, f(expanded))
     def flatten[C: Eq, D](implicit ev: A =:= Expanded[C, D]): Expanded[C, B] = Expanded(original.original, expanded)
-    def sameOrigin[C](o: Expanded[A, C]): Boolean = o.original === original
+    def sameOriginAs[C](o: Expanded[A, C]): Boolean = o.original === original
   }
 
   implicit def eqExpanded[A, B] = Eq.fromUniversalEquals[Expanded[A, B]]
