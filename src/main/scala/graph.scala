@@ -15,6 +15,7 @@ package object graph {
     def map[C](f: B => C): Expanded[A, C] = Expanded(original, f(expanded))
     def flatMap[C](f: B => Expanded[B, C]): Expanded[A, C] = Expanded(original, f(expanded).expanded)
   }
+
   implicit def eqExpanded[A, B] = Eq.fromUniversalEquals[Expanded[A, B]]
 
   type Graph[A] = HashMap[A, Set[A]]
