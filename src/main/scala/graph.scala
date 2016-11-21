@@ -11,10 +11,9 @@ import cats.syntax.foldable._
 
 package object graph {
 
-  case class Expanded[A: Eq, B](original: A, expanded: B) {
-    def map[C](f: B => C): Expanded[A, C] = Expanded(original, f(expanded))
-    def flatten[C: Eq, D](implicit ev: A =:= Expanded[C, D]): Expanded[C, B] = Expanded(original.original, expanded)
-    def sameOriginAs[C](o: Expanded[A, C]): Boolean = o.original === original
+  case class Expanded[A: Eq, B](source: A, value: B) {
+    def map[C](f: B => C): Expanded[A, C] = Expanded(source, f(value))
+    def flatten[C: Eq, D](implicit ev: A =:= Expanded[C, D]): Expanded[C, B] = Expanded(source.source, value)
   }
 
   implicit def eqExpanded[A, B] = Eq.fromUniversalEquals[Expanded[A, B]]
