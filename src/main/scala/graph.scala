@@ -106,7 +106,7 @@ package object graph {
         fold(xs.toSet, visited)(f(x, result))(f)
       }
 
-    def previous(a: A): List[A] =
+    def ancestors(a: A): List[A] =
       reverse.withRoot(_ === a).order match {
         case Nil => Nil
         case _ :: xs => xs

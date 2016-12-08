@@ -144,10 +144,10 @@ res1: common.graph.DirectedGraph[Int] =
 4 -> 5, 10, 6, 9, 7, 8
 ```
 
-##### `previous(a: A): List[A]`
+##### `ancestors(a: A): List[A]`
 In a reversed graph, the `order` starting from `a`
 ```scala
-scala> gr.previous(8)
+scala> gr.ancestors(8)
 res2: List[Int] = List(9, 10)
 ```
 
