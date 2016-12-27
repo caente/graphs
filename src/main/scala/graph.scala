@@ -153,7 +153,7 @@ object graph2 {
   }
   case class Empty[A]() extends DAG[A] {
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g
-    def leaf = DAG.empty[A]
+    def leaf: DAG[A] = this
     def root: DAG[A] = this
   }
 
