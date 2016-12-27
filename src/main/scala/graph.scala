@@ -118,19 +118,23 @@ object graph2 {
   sealed trait DAG[A] {
     def root: DAG[A]
     def leaf: DAG[A]
+    def flatMap[B](f:A => DAG[B]):DAG[B] = ???
+    def append(g:DAG[A]):DAG[A]
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A]
   }
   case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = Besides(g1.root, g2.root)
     def leaf = Besides(g1.leaf, g2.leaf)
+    def append(g:DAG[A]):DAG[A] = 
+      Besides(g1.append(g), g2.append(g))
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = {
       val appended1 = (g1.leaf, g.root) match {
-        case (Single(a1), Single(a)) if f(a1, a) => Some(Before(g1, g))
-        case _ => None
+        case (Single(a1), Single(a)) if f(a1, a) => g1 append g
+        case _ => g1
       }
       val appended2 = (g2.leaf, g.root) match {
-        case (Single(a2), Single(a)) if f(a2, a) => Some(Before(g2, g))
-        case _ => None
+        case (Single(a2), Single(a)) if f(a2, a) => g2 append g
+        case _ => g2
       }
       appended1.map(Besides(_, g2))
         .orElse(appended2.map(Besides(g1, _)))
@@ -140,20 +144,24 @@ object graph2 {
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = g1.root
     def leaf = g2.leaf
+    def append(g:DAG[A]):DAG[A] = 
+      Before(g1, g2.append(g))
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
       Before(g1, g2.appendWith(f)(g))
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
     def leaf = this
+    def append(g:DAG[A]):DAG[A] = Before(this, g)
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
-      case s2 @ Single(a2) if f(a, a2) => Before(this, g)
+      case s2 @ Single(a2) if f(a, a2) => this append g
       case s2 @ Single(a2) => Besides(this, g)
       case Besides(g1, g2) => Besides(appendWith(f)(g1), appendWith(f)(g2))
     }
 
   }
   case class Empty[A]() extends DAG[A] {
+    def append(g:DAG[A]):DAG[A] = g
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g
     def leaf: DAG[A] = this
     def root: DAG[A] = this
