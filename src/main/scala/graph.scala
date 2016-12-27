@@ -70,6 +70,50 @@ object graph2 {
       g2 = Single(6)
     )
   )
+  ///
+  Single(1)
+  //append
+  Single(2)
+  //== 
+  Besides(
+    g1 = Single(1),
+    g2 = Single(2)
+  )
+  //append
+  Single(3)
+  //==
+  Besides(
+    g1 = Besides(
+      g1 = Single(1),
+      g2 = Single(2)
+    ),
+    g2 = Single(3)
+  )
+  //append
+  Before(
+    g1 = Before(
+      g1 = Single(7),
+      g2 = Single(8)
+    ),
+    g2 = Single(6)
+  )
+  //==
+  Besides(
+    g1 = Besides(
+      g1 = Besides(
+        g1 = Single(1),
+        g2 = Single(2)
+      ),
+      g2 = Single(3)
+    ),
+    g2 = Before(
+      g1 = Before(
+        g1 = Single(7),
+        g2 = Single(8)
+      ),
+      g2 = Single(6)
+    )
+  )
 
   sealed trait DAG[A] {
     def root: DAG[A]
@@ -88,8 +132,9 @@ object graph2 {
   case class Single[A](a: A) extends DAG[A] {
     def root = this
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
-      case s2 @ Single(a2) if f(a, a2) => Before(this, s2)
-      case s2 => Besides(this, s2)
+      case s2 @ Single(a2) if f(a, a2) => Before(this, g)
+      case s2 @ Single(a2) => Besides(this, g)
+      case Besides(g1, g2) => Besides(appendWith(f)(g1), appendWith(f)(g2))
     }
 
   }

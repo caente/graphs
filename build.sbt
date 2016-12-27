@@ -28,5 +28,5 @@ initialCommands in console := """
   import cats.syntax.eq._
   import cats.syntax.functor._
   import cats.instances.all._
-  import common.graph._
+  import common.graph2._
   """
