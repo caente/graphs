@@ -9,6 +9,84 @@ import cats.data.Xor
 import collection.immutable.{ HashMap, HashSet }
 import cats.syntax.foldable._
 
+object graph2 {
+
+  Besides(
+    g1 = Before(
+      g1 = Single(1),
+      g2 = Single(2)
+    ),
+    g2 = Before(
+      g1 = Single(3),
+      g2 = Single(4)
+    )
+  )
+
+  Before(
+    g1 = Single(5),
+    g2 = Single(6)
+  )
+
+  Besides(
+    g1 = Before(
+      g1 = Single(1),
+      g2 = Before(
+        g1 = Single(2),
+        g2 = Before(
+          g1 = Single(5),
+          g2 = Single(6)
+        )
+      )
+    ),
+    g2 = Before(
+      g1 = Single(3),
+      g2 = Before(
+        g1 = Single(4),
+        g2 = Before(
+          g1 = Single(5),
+          g2 = Single(6)
+        )
+      )
+    )
+  )
+
+  sealed trait DAG[+A] {
+    def roots: Set[Single[A]]
+    def leafs: Set[Single[A]]
+    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] 
+  }
+  case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
+    def roots = g1.roots ++ g2.roots
+    def leafs = g1.leafs ++ g2.leafs
+    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
+      Besides(g1.appendWith(f)(g), g2.appendWith(f)(g))
+  }
+  case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
+    def roots = g1.roots
+    def leafs = g2.leafs
+    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
+      Before(g1,g2.appendWith(f)(g))
+  }
+  case class Single[A](a: A) extends DAG[A] {
+    def roots = Set(this)
+    def leafs = Set(this)
+    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
+      
+  }
+  case object Empty extends DAG[Nothing]
+
+  object DAG {
+    def empty[A]: DAG[A] = Empty
+    def single[A](a: A): DAG[A] = Single(a)
+    def apply[A](nodes: Seq[A])(relation: (A, A) => Boolean) = {
+      nodes.foldLeft(empty[A]) {
+        (g, n) =>
+          g append single(n)
+      }
+    }
+  }
+}
+
 package object graph {
 
   type Graph[A] = HashMap[A, Set[A]]
