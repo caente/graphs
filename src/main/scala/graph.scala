@@ -21,12 +21,12 @@ object graph2 {
       g2 = Single(4)
     )
   )
-
+  // append
   Before(
     g1 = Single(5),
     g2 = Single(6)
   )
-
+  //===
   Besides(
     g1 = Before(
       g1 = Single(1),
@@ -49,39 +49,62 @@ object graph2 {
       )
     )
   )
+  ///
+  Single(1)
+  // append
+  Before(
+    g1 = Before(
+      g1 = Single(7),
+      g2 = Single(8)
+    ),
+    g2 = Single(6)
+  )
+  //===
+  Before(
+    g1 = Single(1),
+    g2 = Before(
+      g1 = Before(
+        g1 = Single(7),
+        g2 = Single(8)
+      ),
+      g2 = Single(6)
+    )
+  )
 
-  sealed trait DAG[+A] {
-    def roots: Set[Single[A]]
-    def leafs: Set[Single[A]]
-    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] 
+  sealed trait DAG[A] {
+    def root: DAG[A]
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A]
   }
   case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
-    def roots = g1.roots ++ g2.roots
-    def leafs = g1.leafs ++ g2.leafs
-    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
+    def root = Besides(g1.root, g2.root)
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
       Besides(g1.appendWith(f)(g), g2.appendWith(f)(g))
   }
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
-    def roots = g1.roots
-    def leafs = g2.leafs
-    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
-      Before(g1,g2.appendWith(f)(g))
+    def root = g1.root
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
+      Before(g1, g2.appendWith(f)(g))
   }
   case class Single[A](a: A) extends DAG[A] {
-    def roots = Set(this)
-    def leafs = Set(this)
-    def appendWith[A](f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
-      
+    def root = this
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
+      case s2 @ Single(a2) if f(a, a2) => Before(this, s2)
+      case s2 => Besides(this, s2)
+    }
+
   }
-  case object Empty extends DAG[Nothing]
+  case class Empty[A]() extends DAG[A] {
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g
+    def root: DAG[A] = this
+  }
 
   object DAG {
-    def empty[A]: DAG[A] = Empty
+    def empty[A]: DAG[A] = Empty[A]()
     def single[A](a: A): DAG[A] = Single(a)
     def apply[A](nodes: Seq[A])(relation: (A, A) => Boolean) = {
       nodes.foldLeft(empty[A]) {
         (g, n) =>
-          g append single(n)
+          g.appendWith(relation)(single(n))
       }
     }
   }
