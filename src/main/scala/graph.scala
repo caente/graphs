@@ -117,20 +117,33 @@ object graph2 {
 
   sealed trait DAG[A] {
     def root: DAG[A]
+    def leaf: DAG[A]
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A]
   }
   case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = Besides(g1.root, g2.root)
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
-      Besides(g1.appendWith(f)(g), g2.appendWith(f)(g))
+    def leaf = Besides(g1.leaf, g2.leaf)
+    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = {
+      val appended1 = (g1.leaf, g.root) match {
+        case (Single(a1), Single(a)) if f(a1, a) => Before(g1, g)
+        case _ => g1
+      }
+      val appended2 = (g2.leaf, g.root) match {
+        case (Single(a2), Single(a)) if f(a2, a) => Before(g2, g)
+        case _ => g2
+      }
+      Besides(appended1, appended2)
+    }
   }
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = g1.root
+    def leaf = g2.leaf
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
       Before(g1, g2.appendWith(f)(g))
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
+    def leaf = DAG.empty[A]
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
       case s2 @ Single(a2) if f(a, a2) => Before(this, g)
       case s2 @ Single(a2) => Besides(this, g)
@@ -140,6 +153,7 @@ object graph2 {
   }
   case class Empty[A]() extends DAG[A] {
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g
+    def leaf = DAG.empty[A]
     def root: DAG[A] = this
   }
 
