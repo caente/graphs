@@ -126,20 +126,22 @@ object graph2 {
     def root = Besides(g1.root, g2.root)
     def leaf = Besides(g1.leaf, g2.leaf)
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
-      Besides(g1 append g, g2 append g)
+      (g1 append g) append (g2 append g)
   }
 
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = g1.root
     def leaf = g2.leaf
-    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = Before(g1, g2.append(g))
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      g1 append (g2 append g)
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
     def leaf = this
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = g.root match {
       case Single(r) if relation(a, r) => Before(this, g)
-      case Besides(g1, g2) => (this append g1) append (this append g2)
+      case Besides(Single(r1), Single(r2)) if relation(a, r1) || relation(a, r2) =>
+        Before(this, g)
       case _ => Besides(this, g)
     }
   }
