@@ -125,14 +125,16 @@ object graph2 {
     def leaf = Besides(g1.leaf, g2.leaf)
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = {
       val appended1 = (g1.leaf, g.root) match {
-        case (Single(a1), Single(a)) if f(a1, a) => Before(g1, g)
-        case _ => g1
+        case (Single(a1), Single(a)) if f(a1, a) => Some(Before(g1, g))
+        case _ => None
       }
       val appended2 = (g2.leaf, g.root) match {
-        case (Single(a2), Single(a)) if f(a2, a) => Before(g2, g)
-        case _ => g2
+        case (Single(a2), Single(a)) if f(a2, a) => Some(Before(g2, g))
+        case _ => None
       }
-      Besides(appended1, appended2)
+      appended1.map(Besides(_, g2))
+        .orElse(appended2.map(Besides(g1, _)))
+        .getOrElse(Besides(Besides(g1, g2), g))
     }
   }
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
@@ -143,7 +145,7 @@ object graph2 {
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
-    def leaf = DAG.empty[A]
+    def leaf = this
     def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
       case s2 @ Single(a2) if f(a, a2) => Before(this, g)
       case s2 @ Single(a2) => Besides(this, g)

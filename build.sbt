@@ -29,4 +29,5 @@ initialCommands in console := """
   import cats.syntax.functor._
   import cats.instances.all._
   import common.graph2._
+  import common.graph.smallerAndEven
   """
