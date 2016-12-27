@@ -115,55 +115,36 @@ object graph2 {
     )
   )
 
+  type Relation[A] = (A, A) => Boolean
+
   sealed trait DAG[A] {
     def root: DAG[A]
     def leaf: DAG[A]
-    def flatMap[B](f:A => DAG[B]):DAG[B] = ???
-    def append(g:DAG[A]):DAG[A]
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A]
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
   }
   case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = Besides(g1.root, g2.root)
     def leaf = Besides(g1.leaf, g2.leaf)
-    def append(g:DAG[A]):DAG[A] = Besides(Besides(g1, g2),g)
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = {
-      val appended1 = (g1.leaf, g.root) match {
-        case (Single(a1), Single(a)) if f(a1, a) => Before(g1, g)
-        case _ => DAG.empty[A]
-      }
-      val appended2 = (g2.leaf, g.root) match {
-        case (Single(a2), Single(a)) if f(a2, a) => Before(g2, g)
-        case _ => DAG.empty[A]
-      }
-
-      
-
-
-      
-    }
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      Besides(g1 append g, g2 append g)
   }
+
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = g1.root
     def leaf = g2.leaf
-    def append(g:DAG[A]):DAG[A] = 
-      Before(g1, g2.append(g))
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] =
-      Before(g1, g2.appendWith(f)(g))
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = Before(g1, g2.append(g))
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
     def leaf = this
-    def append(g:DAG[A]):DAG[A] = Before(this, g)
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g.root match {
-      case s2 @ Single(a2) if f(a, a2) => this append g
-      case s2 @ Single(a2) => Besides(this, g)
-      case Besides(g1, g2) => Besides(appendWith(f)(g1), appendWith(f)(g2))
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = g.root match {
+      case Single(r) if relation(a, r) => Before(this, g)
+      case Besides(g1, g2) => (this append g1) append (this append g2)
+      case _ => Besides(this, g)
     }
-
   }
   case class Empty[A]() extends DAG[A] {
-    def append(g:DAG[A]):DAG[A] = g
-    def appendWith(f: (A, A) => Boolean)(g: DAG[A]): DAG[A] = g
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = g
     def leaf: DAG[A] = this
     def root: DAG[A] = this
   }
@@ -171,10 +152,10 @@ object graph2 {
   object DAG {
     def empty[A]: DAG[A] = Empty[A]()
     def single[A](a: A): DAG[A] = Single(a)
-    def apply[A](nodes: Seq[A])(relation: (A, A) => Boolean) = {
+    def apply[A](nodes: Seq[A])(implicit relation: Relation[A]) = {
       nodes.foldLeft(empty[A]) {
         (g, n) =>
-          g.appendWith(relation)(single(n))
+          g.append(single(n))
       }
     }
   }
