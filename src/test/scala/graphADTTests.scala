@@ -59,14 +59,6 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
     )
   }
 
-  test("add Besides to Single") {
-    assert(
-      Single(3)
-        .append(Single(1))
-        .append(Single(2)) === Before(Besides(Single(1), Single(2)), Single(3))
-    )
-  }
-
   test("add non-related to Before") {
     assert(
       Single(1)
@@ -118,6 +110,16 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
         .append(Single(5))
         .append(Single(6))
         .leaf === Single(6)
+    )
+  }
+  test("Single connected") {
+    assert(
+      Single(1).connected(Single(3))
+    )
+  }
+  test("Before connected") {
+    assert(
+      Single(1).append(Single(2)).connected(Single(3))
     )
   }
   test("generator") {
