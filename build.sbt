@@ -30,4 +30,13 @@ initialCommands in console := """
   import cats.instances.all._
   import common.graph2._
   import common.graph.smallerAndEven
+val nodes = Map(
+    1 -> List(3),
+    2 -> List(3),
+    3 -> List(5),
+    4 -> List(6),
+    5 -> List(6),
+    6 -> List()
+  )
+  implicit val relation: Relation[Int] = (x, y) => nodes(x).contains(y)
   """

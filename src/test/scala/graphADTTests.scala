@@ -7,12 +7,6 @@ import graph2._
 
 class GraphTests extends FunSuite with TypeCheckedTripleEquals {
 
-  test("Besides before Single") {
-    implicit val relation: Relation[Int] = (x, y) => x > y && y % 2 == 0
-    assert(
-      (Single(3) append (Single(1) append Single(2))) === Besides(Before(Single(3), Single(2)), Single(1))
-    )
-  }
   val nodes = Map(
     1 -> List(3),
     2 -> List(3),
@@ -41,6 +35,12 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
   test("add to empty") {
     assert(
       (DAG.empty[Int] append Single(1)) === Single(1)
+    )
+  }
+
+  test("associativity") {
+    assert(
+      (Single(1) append (Single(2) append Single(3))) === ((Single(1) append Single(2)) append Single(3))
     )
   }
 
@@ -118,7 +118,7 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
   }
   test("Before connected") {
     assert(
-      ((Single(1) append Single(2)) connected Single(3))
+      ((Single(2) append Single(3)) connected Single(5))
     )
   }
   test("generator") {

@@ -16,6 +16,8 @@ object graph2 {
   sealed trait DAG[A] {
     def root: DAG[A]
     def leaf: DAG[A]
+    def before(g: DAG[A]): DAG[A] = Before(this, g)
+    def besides(g: DAG[A]): DAG[A] = Besides(this, g)
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
     def connected(g: DAG[A])(implicit relation: Relation[A]): Boolean =
       (leaf, g.root) match {
@@ -40,7 +42,8 @@ object graph2 {
     def root = g1.root
     def leaf = g2.leaf
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
-      g1 append (g2 append g)
+      if (g2.connected(g)) Before(this, g)
+      else Besides(this, g)
   }
   case class Single[A](a: A) extends DAG[A] {
     def root = this
