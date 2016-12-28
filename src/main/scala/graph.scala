@@ -11,122 +11,29 @@ import cats.syntax.foldable._
 
 object graph2 {
 
-  Besides(
-    g1 = Before(
-      g1 = Single(1),
-      g2 = Single(2)
-    ),
-    g2 = Before(
-      g1 = Single(3),
-      g2 = Single(4)
-    )
-  )
-  // append
-  Before(
-    g1 = Single(5),
-    g2 = Single(6)
-  )
-  //===
-  Besides(
-    g1 = Before(
-      g1 = Single(1),
-      g2 = Before(
-        g1 = Single(2),
-        g2 = Before(
-          g1 = Single(5),
-          g2 = Single(6)
-        )
-      )
-    ),
-    g2 = Before(
-      g1 = Single(3),
-      g2 = Before(
-        g1 = Single(4),
-        g2 = Before(
-          g1 = Single(5),
-          g2 = Single(6)
-        )
-      )
-    )
-  )
-  ///
-  Single(1)
-  // append
-  Before(
-    g1 = Before(
-      g1 = Single(7),
-      g2 = Single(8)
-    ),
-    g2 = Single(6)
-  )
-  //===
-  Before(
-    g1 = Single(1),
-    g2 = Before(
-      g1 = Before(
-        g1 = Single(7),
-        g2 = Single(8)
-      ),
-      g2 = Single(6)
-    )
-  )
-  ///
-  Single(1)
-  //append
-  Single(2)
-  //== 
-  Besides(
-    g1 = Single(1),
-    g2 = Single(2)
-  )
-  //append
-  Single(3)
-  //==
-  Besides(
-    g1 = Besides(
-      g1 = Single(1),
-      g2 = Single(2)
-    ),
-    g2 = Single(3)
-  )
-  //append
-  Before(
-    g1 = Before(
-      g1 = Single(7),
-      g2 = Single(8)
-    ),
-    g2 = Single(6)
-  )
-  //==
-  Besides(
-    g1 = Besides(
-      g1 = Besides(
-        g1 = Single(1),
-        g2 = Single(2)
-      ),
-      g2 = Single(3)
-    ),
-    g2 = Before(
-      g1 = Before(
-        g1 = Single(7),
-        g2 = Single(8)
-      ),
-      g2 = Single(6)
-    )
-  )
-
   type Relation[A] = (A, A) => Boolean
 
   sealed trait DAG[A] {
     def root: DAG[A]
     def leaf: DAG[A]
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
+    def connected(g: DAG[A])(implicit relation: Relation[A]): Boolean =
+      (leaf, g.root) match {
+        case (Single(l), Single(r)) => relation(l, r)
+        case (Besides(Single(l1), Single(l2)), Besides(Single(r1), Single(r2))) =>
+          (relation(l1, r1) && relation(l2, r2)) ||
+            (relation(l1, r2) && relation(l2, r1))
+        case _ => false
+      }
   }
   case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
     def root = Besides(g1.root, g2.root)
     def leaf = Besides(g1.leaf, g2.leaf)
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
-      (g1 append g) append (g2 append g)
+      if (g1.connected(g) && g2.connected(g)) Before(this, g)
+      else if (g1.connected(g)) Besides(Before(g1, g), g2)
+      else if (g2.connected(g)) Besides(g1, Before(g2, g))
+      else Besides(this, g)
   }
 
   case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
