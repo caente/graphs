@@ -40,86 +40,85 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
 
   test("add to empty") {
     assert(
-      DAG.empty[Int].append(Single(1)) === Single(1)
+      (DAG.empty[Int] append Single(1)) === Single(1)
     )
   }
 
   test("add related to Single") {
     assert(
-      Single(1)
-        .append(Single(2)) === Besides(Single(1), Single(2))
+      (Single(1) append Single(2)) === Besides(Single(1), Single(2))
     )
   }
 
   test("add related to Besides") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3)) === Before(Besides(Single(1), Single(2)), Single(3))
+      (Single(1) append
+        Single(2) append
+        Single(3)) === Before(Besides(Single(1), Single(2)), Single(3))
     )
   }
 
   test("add non-related to Before") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3))
-        .append(Single(4)) === Besides(Before(Besides(Single(1), Single(2)), Single(3)), Single(4))
+      (Single(1) append
+        Single(2) append
+        Single(3) append
+        Single(4)) === Besides(Before(Besides(Single(1), Single(2)), Single(3)), Single(4))
     )
   }
 
   test("add partially-related to Besides") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3))
-        .append(Single(4))
-        .append(Single(5)) === Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4))
+      (Single(1) append
+        Single(2) append
+        Single(3) append
+        Single(4) append
+        Single(5)) === Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4))
     )
   }
 
   test("add double-related to Besides") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3))
-        .append(Single(4))
-        .append(Single(5))
-        .append(Single(6)) === Before(Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4)), Single(6))
+      (Single(1) append
+        Single(2) append
+        Single(3) append
+        Single(4) append
+        Single(5) append
+        Single(6)) === Before(Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4)), Single(6))
     )
   }
 
   test("root") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3))
-        .append(Single(4))
-        .append(Single(5))
-        .append(Single(6))
+      (Single(1) append
+        Single(2) append
+        Single(3) append
+        Single(4) append
+        Single(5) append
+        Single(6))
         .root === Besides(Besides(Single(1), Single(2)), Single(4))
     )
   }
 
   test("leaf") {
     assert(
-      Single(1)
-        .append(Single(2))
-        .append(Single(3))
-        .append(Single(4))
-        .append(Single(5))
-        .append(Single(6))
+      (Single(1) append
+        Single(2) append
+        Single(3) append
+        Single(4) append
+        Single(5) append
+        Single(6))
         .leaf === Single(6)
     )
   }
   test("Single connected") {
     assert(
-      Single(1).connected(Single(3))
+      (Single(1) connected Single(3))
     )
   }
   test("Before connected") {
     assert(
-      Single(1).append(Single(2)).connected(Single(3))
+      ((Single(1) append Single(2)) connected Single(3))
     )
   }
   test("generator") {
