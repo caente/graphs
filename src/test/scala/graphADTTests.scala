@@ -29,6 +29,7 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
 */
 
   implicit val relation: Relation[Int] = (x, y) => nodes(x).contains(y)
+
   test("add to empty") {
     DAG.empty[Int].append(Single(1)) === Single(1)
   }
@@ -71,5 +72,27 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
       .append(Single(4))
       .append(Single(5))
       .append(Single(6)) === Before(Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4)), Single(6))
+  }
+
+  test("root") {
+    DAG.empty[Int]
+      .append(Single(1))
+      .append(Single(2))
+      .append(Single(3))
+      .append(Single(4))
+      .append(Single(5))
+      .append(Single(6))
+      .root === Besides(Besides(Single(1), Single(2)), Single(4))
+  }
+
+  test("leaf") {
+    DAG.empty[Int]
+      .append(Single(1))
+      .append(Single(2))
+      .append(Single(3))
+      .append(Single(4))
+      .append(Single(5))
+      .append(Single(6))
+      .leaf === Single(6)
   }
 }
