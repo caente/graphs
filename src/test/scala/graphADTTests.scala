@@ -95,4 +95,7 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
       .append(Single(6))
       .leaf === Single(6)
   }
+  test("generator") {
+    DAG(List(1, 2, 3, 4, 5, 6)) === Before(Besides(Before(Before(Besides(Single(1), Single(2)), Single(3)), Single(5)), Single(4)), Single(6))
+  }
 }
