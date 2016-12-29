@@ -9,6 +9,16 @@ import cats.data.Xor
 import collection.immutable.{ HashMap, HashSet }
 import cats.syntax.foldable._
 
+object graph3 {
+  import matryoshka._
+import matryoshka.implicits._
+  sealed trait DAG[A]
+  case class Besides[A](a1: A, a2: A) extends DAG[A]
+  case class Before[A](a1: A, a2: A) extends DAG[A]
+  case class Single[A](a: A) extends DAG[A]
+  case class Empty[A]() extends DAG[A]
+  val f = Fix[DAG]
+}
 object graph2 {
 
   type Relation[A] = (A, A) => Boolean
@@ -16,8 +26,6 @@ object graph2 {
   sealed trait DAG[A] {
     def root: DAG[A]
     def leaf: DAG[A]
-    def before(g: DAG[A]): DAG[A] = Before(this, g)
-    def besides(g: DAG[A]): DAG[A] = Besides(this, g)
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
     def connected(g: DAG[A])(implicit relation: Relation[A]): Boolean =
       (leaf, g.root) match {
