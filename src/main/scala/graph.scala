@@ -11,13 +11,12 @@ import cats.syntax.foldable._
 
 object graph3 {
   import matryoshka._
-import matryoshka.implicits._
+  import matryoshka.implicits._
   sealed trait DAG[A]
   case class Besides[A](a1: A, a2: A) extends DAG[A]
   case class Before[A](a1: A, a2: A) extends DAG[A]
   case class Single[A](a: A) extends DAG[A]
   case class Empty[A]() extends DAG[A]
-  val f = Fix[DAG]
 }
 object graph2 {
 
@@ -27,6 +26,20 @@ object graph2 {
     def root: DAG[A]
     def leaf: DAG[A]
     def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
+    def append2(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      (this.root, g) match {
+        case (rs @ Single(r), ls @ Single(l)) =>
+          if (relation(r, l)) Before(rs, ls)
+          else if (relation(l, r)) Before(ls, rs)
+          else Besides(rs, ls)
+        case (Besides(g1, g2), g) => g1.append2(g).append2(g2)
+        case (Before(g1, g2), g) => g1.append2(g).append2(g2)
+        case (g, Besides(g1, g2)) => g.append2(g1).append2(g2)
+        case (g, Before(g1, g2)) => g.append2(g1).append2(g2)
+        case (Empty(), g) => g
+        case (g, Empty()) => g
+      }
+    //  this.tail.append2(this.root.append2(g.leaf)).append2(g.first)
     def connected(g: DAG[A])(implicit relation: Relation[A]): Boolean =
       (leaf, g.root) match {
         case (Single(l), Single(r)) => relation(l, r)

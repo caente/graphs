@@ -32,18 +32,22 @@ class GraphTests extends FunSuite with TypeCheckedTripleEquals {
 
   implicit val relation: Relation[Int] = (x, y) => nodes(x).contains(y)
 
-  test("add to empty") {
-    assert(
-      (DAG.empty[Int] append Single(1)) === Single(1)
-    )
-  }
-
   test("associativity") {
     assert(
       (Single(1) append (Single(2) append Single(3))) === ((Single(1) append Single(2)) append Single(3))
     )
   }
 
+  test("commutability") {
+    assert(
+      (Besides(Single(1), Single(2)) append Single(3)) === (Single(3) append Besides(Single(1), Single(2)))
+    )
+  }
+  test("add to empty") {
+    assert(
+      (DAG.empty[Int] append Single(1)) === Single(1)
+    )
+  }
   test("add related to Single") {
     assert(
       (Single(1) append Single(2)) === Besides(Single(1), Single(2))
