@@ -9,6 +9,93 @@ import cats.data.Xor
 import collection.immutable.{ HashMap, HashSet }
 import cats.syntax.foldable._
 
+object graph3 {
+  import matryoshka._
+  import matryoshka.implicits._
+  sealed trait DAG[A]
+  case class Besides[A](a1: A, a2: A) extends DAG[A]
+  case class Before[A](a1: A, a2: A) extends DAG[A]
+  case class Single[A](a: A) extends DAG[A]
+  case class Empty[A]() extends DAG[A]
+}
+object graph2 {
+
+  type Relation[A] = (A, A) => Boolean
+
+  sealed trait DAG[A] {
+    def root: DAG[A]
+    def leaf: DAG[A]
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A]
+    def append2(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      (this.root, g) match {
+        case (rs @ Single(r), ls @ Single(l)) =>
+          if (relation(r, l)) Before(rs, ls)
+          else if (relation(l, r)) Before(ls, rs)
+          else Besides(rs, ls)
+        case (Besides(g1, g2), g) => g1.append2(g).append2(g2)
+        case (Before(g1, g2), g) => g1.append2(g).append2(g2)
+        case (g, Besides(g1, g2)) => g.append2(g1).append2(g2)
+        case (g, Before(g1, g2)) => g.append2(g1).append2(g2)
+        case (Empty(), g) => g
+        case (g, Empty()) => g
+      }
+    //  this.tail.append2(this.root.append2(g.leaf)).append2(g.first)
+    def connected(g: DAG[A])(implicit relation: Relation[A]): Boolean =
+      (leaf, g.root) match {
+        case (Single(l), Single(r)) => relation(l, r)
+        case (Besides(Single(l1), Single(l2)), Besides(Single(r1), Single(r2))) =>
+          (relation(l1, r1) && relation(l2, r2)) ||
+            (relation(l1, r2) && relation(l2, r1))
+        case _ => false
+      }
+  }
+  case class Besides[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
+    def root = Besides(g1.root, g2.root)
+    def leaf = Besides(g1.leaf, g2.leaf)
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      if (g1.connected(g) && g2.connected(g)) Before(this, g)
+      else if (g1.connected(g)) Besides(Before(g1, g), g2)
+      else if (g2.connected(g)) Besides(g1, Before(g2, g))
+      else Besides(this, g)
+  }
+
+  case class Before[A](g1: DAG[A], g2: DAG[A]) extends DAG[A] {
+    def root = g1.root
+    def leaf = g2.leaf
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] =
+      if (g2.connected(g)) Before(this, g)
+      else Besides(this, g)
+  }
+  case class Single[A](a: A) extends DAG[A] {
+    def root = this
+    def leaf = this
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = g.root match {
+      case Single(r) if relation(a, r) => Before(this, g)
+      case Besides(Single(r1), Single(r2)) if relation(a, r1) || relation(a, r2) =>
+        Before(this, g)
+      case _ => Besides(this, g)
+    }
+  }
+  case class Empty[A]() extends DAG[A] {
+    def append(g: DAG[A])(implicit relation: Relation[A]): DAG[A] = g
+    def leaf: DAG[A] = this
+    def root: DAG[A] = this
+  }
+
+  object DAG {
+    def empty[A]: DAG[A] = Empty[A]()
+    def single[A](a: A): DAG[A] = Single(a)
+    def apply[A](nodes: Seq[A])(implicit relation: Relation[A]) = {
+      nodes.foldLeft(empty[A]) {
+        (g, n) =>
+          g.append(single(n))
+      }
+    }
+  }
+}
+
+
+
 package object graph {
 
   type Graph[A] = HashMap[A, Set[A]]
