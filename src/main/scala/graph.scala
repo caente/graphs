@@ -8,38 +8,6 @@ import matryoshka._
 import matryoshka.data.Fix
 import matryoshka.implicits._
 
-package object lists {
-  sealed trait IntList[+H, +A]
-  case class Cons[H, A](head: H, tail: A) extends IntList[H, A]
-  case object Empty extends IntList[Nothing, Nothing]
-
-  implicit def intListFunct[H]: Functor[IntList[H, ?]] = new Functor[IntList[H, ?]] {
-    def map[A, B](fa: IntList[H, A])(f: A => B): IntList[H, B] = fa match {
-      case Cons(head, tail) => Cons(head, f(tail))
-      case Empty => Empty
-    }
-  }
-
-  def lst[T](implicit T: Corecursive.Aux[T, IntList[Int, ?]]): T =
-    Cons(
-      1,
-      Cons(
-        2,
-        Cons(
-          3,
-          Empty.embed
-        ).embed
-      ).embed
-    ).embed
-
-  def sumList[T](l: T)(implicit T: Recursive.Aux[T, IntList[Int, ?]]): Int = l.cata[Int] {
-    case Cons(head, tail) => head + tail
-    case Empty => 0
-  }
-
-  val listRes = sumList(lst[Fix[IntList[Int, ?]]])
-}
-
 package object graph {
   sealed trait Graph[+N, +G]
   case class Node[N, G](node: N, graph: G) extends Graph[N, G]
@@ -76,6 +44,11 @@ package object graph {
 
   def existsInGraph[G, N](g: G)(f: N => Boolean)(implicit G: Recursive.Aux[G, Graph[N, ?]]): Boolean =
     G.cata(g)(exists(f))
+
+  def main(args: Array[String]): Unit = {
+
+    assert(existsInGraph(gr[Fix[Graph[Int, ?]]])((i: Int) => i == 3))
+  }
 
   //def dfs[N, Z](z: Z)(f: (Z, N) => Z): Algebra[Graph[N, ?], Z] = {
   //  case Empty => z
