@@ -1,14 +1,27 @@
 package common
 
 import org.joda.time._
-import cats._
-import cats.syntax.eq._
-import cats.syntax.functor._
-import cats.instances.all._
-import cats.data.Xor
 import collection.immutable.{ HashMap, HashSet }
-import cats.syntax.foldable._
 
+import matryoshka.{ Recursive, Corecursive }
+import matryoshka.data.Fix // The fixed-point type similar to the one we implemented ad-hoc, but with Recursive and Corecursive instances.
+import matryoshka.implicits._ // Syntax<Paste>
+
+package object graph {
+  sealed trait Graph[N]
+  case class Node[N, G](node: N, graph: G) extends Graph[N]
+  case object Empty[N]
+
+  val graphFunctor = scalaz.Functor[Graph]{
+    override def map[A, B](fa: Graph[A])(f: (A) => B) = 
+      fa match {
+        case Node(n,g) => Node(f(n), map(g))
+        case Empty => 
+      }
+  }
+
+}
+/*
 package object graph {
 
   type Graph[A] = HashMap[A, Set[A]]
@@ -46,6 +59,16 @@ package object graph {
   }
 
   sealed abstract case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
+
+    private def fold[B](ns: Set[A], vs: HashSet[A] = HashSet.empty)(z: B)(f: (A, B) => B): (B, HashSet[A]) =
+      if (ns.isEmpty) (z, vs)
+      else if (vs.contains(ns.head)) fold(ns.tail, vs)(z)(f)
+      else {
+        val x = ns.head
+        val xs = ns.tail
+        val (result, visited) = fold(adjacents(x), vs + x)(z)(f)
+        fold(xs.toSet, visited)(f(x, result))(f)
+      }
 
     def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 
@@ -95,16 +118,6 @@ package object graph {
           else gr
       }._1
       )
-
-    private def fold[B](ns: Set[A], vs: HashSet[A] = HashSet.empty)(z: B)(f: (A, B) => B): (B, HashSet[A]) =
-      if (ns.isEmpty) (z, vs)
-      else if (vs.contains(ns.head)) fold(ns.tail, vs)(z)(f)
-      else {
-        val x = ns.head
-        val xs = ns.tail
-        val (result, visited) = fold(adjacents(x), vs + x)(z)(f)
-        fold(xs.toSet, visited)(f(x, result))(f)
-      }
 
     def ancestors(a: A): List[A] =
       reverse.withRoot(_ === a).order match {
@@ -163,3 +176,4 @@ package object graph {
   }
 
 }
+*/
