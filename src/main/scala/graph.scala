@@ -3,25 +3,98 @@ package common
 import org.joda.time._
 import collection.immutable.{ HashMap, HashSet }
 
-import matryoshka.{ Recursive, Corecursive }
-import matryoshka.data.Fix // The fixed-point type similar to the one we implemented ad-hoc, but with Recursive and Corecursive instances.
-import matryoshka.implicits._ // Syntax<Paste>
+import scalaz._, Scalaz._
+import matryoshka._
+import matryoshka.data.Fix
+import matryoshka.implicits._
+
+package object lists {
+  sealed trait IntList[+H, +A]
+  case class Cons[H, A](head: H, tail: A) extends IntList[H, A]
+  case object Empty extends IntList[Nothing, Nothing]
+
+  implicit def intListFunct[H]: Functor[IntList[H, ?]] = new Functor[IntList[H, ?]] {
+    def map[A, B](fa: IntList[H, A])(f: A => B): IntList[H, B] = fa match {
+      case Cons(head, tail) => Cons(head, f(tail))
+      case Empty => Empty
+    }
+  }
+
+  def lst[T](implicit T: Corecursive.Aux[T, IntList[Int, ?]]): T =
+    Cons(
+      1,
+      Cons(
+        2,
+        Cons(
+          3,
+          Empty.embed
+        ).embed
+      ).embed
+    ).embed
+
+  def sumList[T](l: T)(implicit T: Recursive.Aux[T, IntList[Int, ?]]): Int = l.cata[Int] {
+    case Cons(head, tail) => head + tail
+    case Empty => 0
+  }
+
+  val listRes = sumList(lst[Fix[IntList[Int, ?]]])
+}
 
 package object graph {
-  sealed trait Graph[N]
-  case class Node[N, G](node: N, graph: G) extends Graph[N]
-  case object Empty[N]
+  sealed trait Graph[+N, +G]
+  case class Node[N, G](node: N, graph: G) extends Graph[N, G]
+  case object Empty extends Graph[Nothing, Nothing]
+  object Graph {
+    def empty[N, G]: Graph[N, G] = Empty
+  }
 
-  val graphFunctor = scalaz.Functor[Graph]{
-    override def map[A, B](fa: Graph[A])(f: (A) => B) = 
+  implicit def graphBiFunctor[N, G] = new scalaz.Bifunctor[Graph] {
+    def bimap[N, G, C, D](fa: Graph[N, G])(f: N => C, g: G => D): Graph[C, D] =
       fa match {
-        case Node(n,g) => Node(f(n), map(g))
-        case Empty => 
+        case Node(n, gr) => Node(f(n), g(gr))
+        case Empty => Empty
       }
   }
 
+  implicit def graphFunctor[N](implicit BF: scalaz.Bifunctor[Graph]): Functor[Graph[N, ?]] = BF.rightFunctor
+
+  def exists[N](f: N => Boolean): Algebra[Graph[N, ?], Boolean] = {
+    case Node(n, _) => f(n)
+    case Empty => false
+  }
+
+  def gr[G](implicit G: Corecursive.Aux[G, Graph[Int, ?]]): G =
+    G.embed(
+      Node(
+        node = 1,
+        graph = G.embed(Node(
+          node = 2,
+          graph = G.embed(Empty)
+        ))
+      )
+    )
+
+  def existsInGraph[G, N](g: G)(f: N => Boolean)(implicit G: Recursive.Aux[G, Graph[N, ?]]): Boolean =
+    G.cata(g)(exists(f))
+
+  //def dfs[N, Z](z: Z)(f: (Z, N) => Z): Algebra[Graph[N, ?], Z] = {
+  //  case Empty => z
+  //  case EmptyNode(n) => f(z, n)
+  //  case Node(n, adjacents, g) => z
+  //}
 }
 /*
+
+private def fold[B](ns: Set[A], vs: HashSet[A] = HashSet.empty)(z: B)(f: (A, B) => B): (B, HashSet[A]) =
+      if (ns.isEmpty) (z, vs)
+      else if (vs.contains(ns.head)) fold(ns.tail, vs)(z)(f)
+      else {
+        val x = ns.head
+        val xs = ns.tail
+        val (result, visited) = fold(adjacents(x), vs + x)(z)(f)
+        fold(xs.toSet, visited)(f(x, result))(f)
+      }
+
 package object graph {
 
   type Graph[A] = HashMap[A, Set[A]]
@@ -60,17 +133,7 @@ package object graph {
 
   sealed abstract case class DirectedGraph[A: Eq] private (private val data: Graph[A]) {
 
-    private def fold[B](ns: Set[A], vs: HashSet[A] = HashSet.empty)(z: B)(f: (A, B) => B): (B, HashSet[A]) =
-      if (ns.isEmpty) (z, vs)
-      else if (vs.contains(ns.head)) fold(ns.tail, vs)(z)(f)
-      else {
-        val x = ns.head
-        val xs = ns.tail
-        val (result, visited) = fold(adjacents(x), vs + x)(z)(f)
-        fold(xs.toSet, visited)(f(x, result))(f)
-      }
-
-    def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
+        def adjacents(a: A): Set[A] = data.get(a).toSet.flatten
 
     val (
       roots: Set[A],

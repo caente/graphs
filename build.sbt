@@ -7,6 +7,9 @@ resolvers ++= Seq(
   Resolver.bintrayRepo("drdozer", "maven")
 )
 
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+
 libraryDependencies ++= Seq(
   "com.github.nscala-time" %% "nscala-time" % "2.14.0",
   "com.github.mpilquist" %% "simulacrum" % "0.8.0",
