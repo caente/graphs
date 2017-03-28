@@ -32,22 +32,20 @@ package object graph {
   }
 
   def gr[G](implicit G: Corecursive.Aux[G, Graph[Int, ?]]): G =
-    G.embed(
-      Node(
-        node = 1,
-        graph = G.embed(Node(
-          node = 2,
-          graph = G.embed(Empty)
-        ))
-      )
-    )
+    Node(
+      node = 1,
+      graph = Node(
+        node = 2,
+        graph = Empty.embed
+      ).embed
+    ).embed
 
   def existsInGraph[G, N](g: G)(f: N => Boolean)(implicit G: Recursive.Aux[G, Graph[N, ?]]): Boolean =
     G.cata(g)(exists(f))
 
   def main(args: Array[String]): Unit = {
 
-    assert(existsInGraph(gr[Fix[Graph[Int, ?]]])((i: Int) => i == 3))
+    assert(existsInGraph(gr[Fix[Graph[Int, ?]]])((i: Int) => i == 2))
   }
 
   //def dfs[N, Z](z: Z)(f: (Z, N) => Z): Algebra[Graph[N, ?], Z] = {
